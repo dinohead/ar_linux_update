@@ -1,0 +1,37 @@
+---
+
+- name: YUM | Update all packages
+  become: true
+  become_user: root
+  yum:
+    name: '*'
+    state: latest
+    update_cache: true
+
+- name: YUM | Install yum-utils to run 'needs-restarting'
+  become: true
+  become_user: root
+  yum:
+    name: yum-utils
+    state: present
+
+- name: Check for reboot
+  become: true
+  become_user: root
+  shell: needs-restarting -r
+  ignore_errors: true
+  register: linux_update_reboot_required
+
+- name: SHELL | reboot the system if required
+  become: true
+  become_user: root
+  shell: sleep 2 && shutdown -r now "Reboot for Updates"
+  async: 1
+  poll: 0
+  when: linux_update_reboot_required.rc == 1
+  register: linux_update_reboot
+
+- name: WAIT_FOR_CONNECTION | Wait for connection to be re-established
+  wait_for_connection:
+    delay: 30
+  when: linux_update_reboot.changed

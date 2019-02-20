@@ -1,0 +1,28 @@
+---
+- name: APT | Update, Upgrade, and Autoremove Packages on Ubuntu System
+  become: true
+  become_user: root
+  apt:
+    autoremove: true
+    update_cache: true
+    upgrade: dist
+
+- name: Check if a reboot is required
+  stat:
+    path: /var/run/reboot-required
+    get_md5: false
+  register: linux_update_reboot_required
+
+- name: SHELL | reboot the system if required
+  become: true
+  become_user: root
+  shell: sleep 2 && shutdown -r now "Reboot for Updates"
+  async: 1
+  poll: 0
+  when: linux_update_reboot_required.stat.exists
+  register: linux_update_reboot
+
+- name: WAIT_FOR_CONNECTION | Wait for connection to be re-established
+  wait_for_connection:
+    delay: 30
+  when: linux_update_reboot.changed
