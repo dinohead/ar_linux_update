@@ -1,19 +1,46 @@
 ---
 
-- name: YUM | Update all packages
+- name: YUM | Update all packages on 7
   become: true
   become_user: root
   yum:
     name: '*'
     state: latest
     update_cache: true
+  vars:
+    ansible_python_interpreter: /usr/bin/python
+  when:
+    - "ansible_distribution_major_version | int <= 7"
 
-- name: YUM | Install yum-utils to run 'needs-restarting'
+- name: YUM | Update all packages on 8
+  become: true
+  become_user: root
+  yum:
+    name: '*'
+    state: latest
+    update_cache: true
+  when:
+    - "ansible_distribution_major_version | int > 7"
+
+- name: YUM | Install yum-utils to run 'needs-restarting' on 7
   become: true
   become_user: root
   yum:
     name: yum-utils
     state: present
+  vars:
+    ansible_python_interpreter: /usr/bin/python
+  when:
+    - "ansible_distribution_major_version | int <= 7"
+
+- name: YUM | Install yum-utils to run 'needs-restarting' on 8
+  become: true
+  become_user: root
+  yum:
+    name: yum-utils
+    state: present
+  when:
+    - "ansible_distribution_major_version | int > 7"
 
 - name: Check for reboot
   become: true
